@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>3D Terrain Slice Simulation with Points</title>
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+
+    <!-- Mapbox GL JS CSS and JS -->
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+
+    <!-- three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- SimplexNoise for terrain simulation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+      #ui {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: sans-serif;
+        z-index: 1;
+      }
+      #ui input {
+        margin: 0 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- UI for place name input -->
+    <div id="ui">
+      <label for="place">Place Name:</label>
+      <input type="text" id="place" placeholder="New York City" />
+      <button id="generate">Generate 3D Slice &amp; Plot Points</button>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      // Replace with your Mapbox access token
+      mapboxgl.accessToken =
+        "pk.eyJ1IjoibWF4aW11c2tpaWkiLCJhIjoiY202dnRzdjY4MGMyMTJqcThoNXNrdXRqYyJ9.LVHifJDYzekf5_Mo3wrnHg";
+
+      // Initialize the Mapbox map.
+      var map = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/light-v10",
+        center: [-74.006, 40.7128], // Default center (New York City)
+        zoom: 12,
+        pitch: 60,
+        bearing: -17.6,
+        antialias: true,
+      });
+
+      // Function to fetch lat/lon from OpenStreetMap Nominatim API
+      async function getCoordinates(place) {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          place
+        )}`;
+        try {
+          let response = await fetch(url);
+          let data = await response.json();
+          if (data.length > 0) {
+            return {
+              lat: parseFloat(data[0].lat),
+              lng: parseFloat(data[0].lon),
+            };
+          } else {
+            alert("Location not found. Try a different place.");
+            return null;
+          }
+        } catch (error) {
+          console.error("Error fetching location:", error);
+          return null;
+        }
+      }
+
+      // When the user clicks the "Generate 3D Slice & Plot Points" button:
+      document
+        .getElementById("generate")
+        .addEventListener("click", async function () {
+          var placeName = document.getElementById("place").value;
+          if (!placeName) {
+            alert("Please enter a valid place name.");
+            return;
+          }
+
+          // Convert place name to lat/lng
+          let coords = await getCoordinates(placeName);
+          if (!coords) return;
+
+          var lat = coords.lat;
+          var lng = coords.lng;
+
+          // Recenter the map
+          map.setCenter([lng, lat]);
+          map.setPitch(60);
+          map.setZoom(14);
+
+          // Fetch point data from your Python backend (if applicable)
+          fetch("/points")
+            .then((response) => response.json())
+            .then((points) => {
+              console.log("Plotting points at:", lat, lng);
+              plotPoints({ lat, lng }, points);
+            })
+            .catch((error) => console.error("Error fetching points:", error));
+        });
+
+      // Function to plot points on the terrain (to be implemented based on your logic)
+      function plotPoints(center, points) {
+        console.log("Received points for:", center, points);
+        // Your existing logic for plotting points in the scene
+      }
+    </script>
+  </body>
+</html>

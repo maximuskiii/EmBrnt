@@ -5,3 +5,4 @@
 FireSatelliteData/
 FireSatelliteData/*.tif
 .DS_Store
+web_ui/
